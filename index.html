@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>PixelLawyerRun</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html {
+            height: 100%;
+            height: -webkit-fill-available; /* Для iOS Safari */
+        }
+        body { 
+            width: 100%; 
+            min-height: 100vh;
+            min-height: -webkit-fill-available; /* Для iOS Safari */
+            font-family: 'Press Start 2P', monospace; 
+            background: #FFFFFF;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        .game-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #FFFFFF;
+        }
+        .screen { 
+            display: none; 
+            width: 100%; 
+            height: 100%; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .screen.active { display: flex; }
+        .game-screen {
+            overflow: hidden;
+        }
+
+        /* MENU */
+        .title-main {
+            font-size: 3rem;
+            color: #000000;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: blink 0.3s infinite;
+            text-shadow: 2px 2px 0px #DDDDDD;
+        }
+        @keyframes blink {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(1px, 1px); }
+        }
+        .tagline {
+            font-size: 0.8rem;
+            color: #000000;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .career-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .career-btn {
+            width: 150px;
+            height: 120px;
+            border: 3px solid #000000;
+            background: #FFFFFF;
+            cursor: pointer;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 3px 3px 0px #000000;
+            transition: all 0.1s;
+        }
+        .career-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #000000;
+        }
+        .career-emoji { font-size: 2rem; }
+        .career-name { font-weight: bold; }
+        .career-diff { font-size: 0.5rem; color: #666666; }
+
+        /* WARNING SCREEN */
+        .warning-box {
+            border: 4px solid #000000;
+            padding: 40px;
+            background: #FFFFFF;
+            max-width: 600px;
+            box-shadow: 5px 5px 0px #000000;
+            text-align: center;
+        }
+        .warning-title {
+            font-size: 1.5rem;
+            color: #FF0000;
+            margin-bottom: 20px;
+        }
+        .warning-text {
+            font-size: 0.8rem;
+            color: #000000;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .disclaimer-box {
+            border: 2px solid #CCCCCC;
+            padding: 15px;
+            background: #F5F5F5;
+            font-size: 0.6rem;
+            color: #333333;
+            margin-bottom: 30px;
+            text-align: left;
+            line-height: 1.4;
+        }
+        .disclaimer-title { font-weight: bold; margin-bottom: 8px; }
+        .button-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 15px 30px;
+            border: 3px solid #000000;
+            background: #FFFFFF;
+            cursor: pointer;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.7rem;
+            box-shadow: 3px 3px 0px #000000;
+            transition: all 0.1s;
+        }
+        .btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #000000;
+        }
+        .btn.yes { border-color: #00CC00; color: #00CC00; }
+        .btn.no { border-color: #FF0000; color: #FF0000; }
+
+        /* GAME SCREEN */
+        .game-header {
+            width: 100%;
+            padding: 10px 20px;
+            border-bottom: 3px solid #000000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            background: #FFFFFF;
+            flex-shrink: 0; /* Не сжимается */
+        }
+        .game-stats {
+            display: flex;
+            gap: 15px;
+        }
+        .stat {
+            border: 2px solid #000000;
+            padding: 5px 10px;
+            background: #FFFFFF;
+            color: #000000;
+        }
+        .stat.money {
+            border-color: #FFD700;
+            color: #FFD700;
+        }
+        .career-info {
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        .exit-btn {
+            padding: 8px 15px;
+            border: 2px solid #FF0000;
+            background: #FFFFFF;
+            color: #FF0000;
+            cursor: pointer;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            box-shadow: 2px 2px 0px #FF0000;
+        }
+        .exit-btn:hover { transform: translate(-1px, -1px); }
+
+        .game-canvas {
+            flex: 1;
+            border: 3px solid #000000;
+            background: #FFFFFF;
+            margin: 0;
+            box-shadow: none;
+            min-height: 200px; /* Минимальная высота для мобильных */
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none; /* Отключаем жесты для canvas */
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            background: #FFFFFF;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            image-rendering: -moz-crisp-edges;
+            touch-action: none;
+        }
+
+        .game-footer {
+            width: 100%;
+            padding: 10px;
+            border-top: 3px solid #000000;
+            text-align: center;
+            font-size: 0.65rem;
+            background: #FFFFFF;
+            flex-shrink: 0; /* Не сжимается */
+        }
+
+        /* GAMEOVER */
+        .gameover-box {
+            border: 4px solid #000000;
+            padding: 40px;
+            background: #FFFFFF;
+            max-width: 600px;
+            box-shadow: 5px 5px 0px #000000;
+            text-align: center;
+        }
+        .gameover-title {
+            font-size: 2rem;
+            color: #FF0000;
+            margin-bottom: 30px;
+        }
+        .gameover-stats {
+            border: 2px solid #000000;
+            padding: 20px;
+            background: #F5F5F5;
+            margin-bottom: 20px;
+            font-size: 0.7rem;
+            text-align: left;
+            line-height: 1.8;
+        }
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #CCCCCC;
+        }
+        .gameover-quote {
+            font-size: 0.8rem;
+            color: #FF0000;
+            border: 2px solid #FF0000;
+            padding: 15px;
+            margin-bottom: 30px;
+            background: #FFF0F0;
+        }
+        .gameover-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* МОБИЛЬНАЯ ОПТИМИЗАЦИЯ */
+        @media (max-width: 768px) {
+            .title-main {
+                font-size: 2rem;
+                margin-bottom: 15px;
+            }
+            .tagline {
+                font-size: 0.6rem;
+                margin-bottom: 20px;
+            }
+            .career-grid {
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            .career-btn {
+                width: 120px;
+                height: 100px;
+                font-size: 0.6rem;
+            }
+            .career-emoji {
+                font-size: 1.5rem;
+            }
+            .game-header {
+                padding: 5px 8px;
+                font-size: 0.5rem;
+                border-bottom-width: 2px;
+            }
+            .game-stats {
+                gap: 5px;
+            }
+            .stat {
+                padding: 3px 6px;
+                font-size: 0.5rem;
+                border-width: 1px;
+            }
+            .career-info {
+                font-size: 0.5rem;
+            }
+            .exit-btn {
+                padding: 4px 8px;
+                font-size: 0.45rem;
+            }
+            .game-canvas {
+                margin: 0;
+                border-left: none;
+                border-right: none;
+                min-height: 0;
+            }
+            .game-footer {
+                padding: 5px;
+                font-size: 0.45rem;
+                border-top-width: 2px;
+            }
+            .warning-box, .gameover-box {
+                padding: 20px;
+                margin: 10px;
+            }
+            .warning-title {
+                font-size: 1.2rem;
+            }
+            .gameover-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Оптимизация для очень маленьких экранов */
+        @media (max-width: 480px) {
+            .title-main {
+                font-size: 1.5rem;
+            }
+            .career-btn {
+                width: 100px;
+                height: 85px;
+                font-size: 0.5rem;
+            }
+            .game-header {
+                padding: 4px 6px;
+                font-size: 0.45rem;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .game-stats {
+                gap: 4px;
+                flex-wrap: wrap;
+            }
+            .stat {
+                padding: 2px 4px;
+                font-size: 0.45rem;
+            }
+            .career-info {
+                font-size: 0.45rem;
+                width: 100%;
+                text-align: center;
+            }
+            .exit-btn {
+                padding: 3px 6px;
+                font-size: 0.4rem;
+            }
+            .game-canvas {
+                margin: 0;
+                min-height: 0;
+            }
+            .game-footer {
+                padding: 4px;
+                font-size: 0.4rem;
+            }
+        }
+        
+        /* Оптимизация для альбомной ориентации на мобильных */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .game-header {
+                padding: 3px 6px;
+                font-size: 0.4rem;
+            }
+            .game-stats {
+                gap: 3px;
+            }
+            .stat {
+                padding: 2px 4px;
+                font-size: 0.4rem;
+            }
+            .career-info {
+                font-size: 0.4rem;
+            }
+            .exit-btn {
+                padding: 2px 5px;
+                font-size: 0.35rem;
+            }
+            .game-footer {
+                padding: 3px;
+                font-size: 0.35rem;
+            }
+            .game-canvas {
+                margin: 0;
+            }
+        }
+
+        /* Предотвращение выделения текста на мобильных */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <!-- MENU SCREEN -->
+        <div class="screen menu-screen active">
+            <div class="title-main">PIXEL<br>LAWYER<br>RUN</div>
+            <div class="tagline">Подпишись на наш ТГ "Технологии для юриста" </br> (новости и обзоры технологий для юристов)</div>
+            <div class="career-grid" id="careerGrid"></div>
+            <a href="https://t.me/techforlaw" target="_blank" style="border: 2px solid #000000; padding: 10px 20px; font-size: 0.7rem; color: #000000; text-decoration: none; background: #FFFFFF; box-shadow: 2px 2px 0px #000000;">TG: @techforlaw</a>
+        </div>
+
+        <!-- WARNING SCREEN -->
+        <div class="screen warning-screen">
+            <div class="warning-box">
+                <div class="warning-title">⚠️ ВНИМАНИЕ ⚠️</div>
+                <div class="warning-text" id="warningText"></div>
+                <div class="disclaimer-box">
+                    <div class="disclaimer-title">📋 Дисклеймер:</div>
+                    <div id="disclaimerText"></div>
+                </div>
+                <div class="button-row">
+                    <button class="btn yes" onclick="startGame()">✓ СОГЛАСЕН</button>
+                    <button class="btn no" onclick="backToMenu()">✗ ПЕРЕДУМАЛ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div class="screen game-screen">
+            <div class="game-header">
+                <div class="game-stats">
+                    <div class="stat">❤️ <span id="lives">3</span></div>
+                    <div class="stat">📈 <span id="score">0</span></div>
+                    <div class="stat money">💰 $<span id="money">0</span></div>
+                </div>
+                <div class="career-info">
+                    <div id="careerName"></div>
+                    <div id="levelName"></div>
+                </div>
+                <button class="exit-btn" onclick="backToMenu()">EXIT</button>
+            </div>
+            <div class="game-canvas" id="gameCanvas"></div>
+            <div class="game-footer">🎮 СПЕЙС / КЛИК = ПРЫГАЙ 💰 СОБИРАЙ ДЕНЬГИ</div>
+        </div>
+
+        <!-- GAMEOVER SCREEN -->
+        <div class="screen gameover-screen">
+            <div class="gameover-box">
+                <div class="gameover-title">💀 GAME OVER 💀</div>
+                <div class="gameover-stats" id="gameoverStats"></div>
+                <div class="gameover-quote" id="gameoverQuote"></div>
+                <div class="gameover-buttons">
+                    <button class="btn yes" onclick="startGame()">ИГРАТЬ ЕЩЕ</button>
+                    <button class="btn no" onclick="backToMenu()">В МЕНЮ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIGURATION ==========
+        const CAREERS = {
+            inhouse: {
+                name: 'ИНХАУС', emoji: '💼',
+                warning: 'Выбирая этот путь, вы рискуете умереть от скуки и бюрократии',
+                disclaimer: 'Согласования не входят в трудовой договор, но отнимают 90% времени.',
+                difficulty: 1.0, moneyMulti: 1.0,
+                levels: ['Младший спец', 'Спец', 'Вед. спец', 'Гл. спец', 'Рук. направления', 'Рук. подразделения', 'Зам ГД', 'ГД'],
+                obstacles: ['doc', 'pc', 'email', 'phone', 'papers', 'coffee', 'printer', 'boss', 'deadline', 'ppt'],
+                quotes: [ 'Вы попали под сокращение', 'Бюджет на юристов не согласован', 'Вы не прошли испытательный срок', 'Ошибка 404: Юрист not found', 'Слишком много правок', 'Exel заменили на отечественное ПО' ]
+            },
+            consulting: {
+                name: 'КОНСАЛТИНГ', emoji: '📊',
+                warning: 'Выбирая этот путь, вы рискуете выгореть в первую неделю!',
+                disclaimer: 'Выгорание гарантировано уже на 3 месяце. Выходные только в календаре и воображении. ChatGPT заменит вас быстрее.',
+                difficulty: 1.8, moneyMulti: 5.0,
+                levels: ['Стажёр', 'Младший юрист', 'Юрист', 'Старший юрист', 'Советник', 'Младший партнер', 'Партнёр', 'Старший партнер'],
+                obstacles: ['partner', 'ppt', 'papers', 'phone', 'coffee', 'deadline', 'printer', 'client'],
+                quotes: [ 'Вы выгорели!', 'Вы не выполнили KPI!', 'Вы не понравились партнеру', 'Вы не сделали презентацию к понедельнику!', 'ChatGPT вас заменил!', 'Дедлайн был вчера!'] 
+            },
+            gov: {
+                name: 'ГОССЛУЖБА', emoji: '🏛️',
+                warning: 'Оно тебе надо? оно тебе не надо',
+                disclaimer: 'Зарплата не растёт, зато стабильно.',
+                difficulty: 0.9, moneyMulti: 0.5,
+                levels: ['Мл опер', 'Опер', 'Ст опер', 'Ст по ОВД', 'Зам нач отделения', 'Нач отделения', 'Зам. Шефули', 'Шефуля', 'Старший Шефуля', 'Первый зам', 'Нач'],
+                obstacles: ['papers', 'printer', 'rat', 'boss', 'safe', 'deadline', 'doc'],
+                quotes: ['Вы не вышли на работу в субботу!', 'Удостоверение потеряно', 'Вы не вышли на работу в отпуск', 'Вас лишили премии!', 'Проверка Прокуратуры выявила нарушение!', 'НСС!', 'Вы не прошли полиграф', 'От сюда невозможно уволиться!', 'Вы ушли с работы в 18:00', 'Вас придавило сейфом', 'Приехала комплексная проверка', 'Вы уволены задним числом']
+            },
+            private: {
+                name: 'ЧАСТНАЯ', emoji: '🚀',
+                warning: 'Вы рискуете умереть в нищете, зато нет начальника (но есть налоги)!',
+                disclaimer: 'Свобода есть, но клиентов нет. Налоговая не спит. ',
+                difficulty: 2, moneyMulti: 1.0,
+                levels: ['Самозанятый', 'ИП', 'ИП с сотрудниками', 'Открыл ООО', 'Попал в рейтинг "Право 3000"'],
+                obstacles: ['tax', 'money', 'client', 'pc', 'bills', 'deadline'],
+                quotes: ['Клиент не заплатил', 'Пришла налоговая', 'Вам нечем платить зарплату', 'К вам пришла трудовая инспекция', 'Вы банкрот! (хорошо, что вы знаете что делать, да?)', 'Вам нечем платить за аренду', 'Ввели адвокатскую монополию!', 'От вас ушел основной клиент', 'Сарафанное радио сломалось']
+            }
+        };
+
+        // ========== ASSETS LOADING ==========
+        const ASSETS_PATH = './assets/obstacles/';
+        let loadedImages = {};
+
+        // Маппинг имён препятствий на реальные имена файлов
+        const OBSTACLE_FILE_MAP = {
+            'pc': 'computer',
+            'ppt': 'powerpoint'
+            // Если имя совпадает, маппинг не нужен
+        };
+
+        function getImageFileName(obstacleName) {
+            return OBSTACLE_FILE_MAP[obstacleName] || obstacleName;
+        }
+
+        function loadImage(name) {
+            return new Promise((resolve, reject) => {
+                const fileName = getImageFileName(name);
+                const img = new Image();
+                img.onload = () => {
+                    loadedImages[name] = img;
+                    console.log(`✓ Loaded: ${fileName}.png (${name})`);
+                    resolve(img);
+                };
+                img.onerror = () => {
+                    console.warn(`✗ Not found: ${ASSETS_PATH}${fileName}.png`);
+                    loadedImages[name] = null; // Помечаем как не загруженное
+                    resolve(null); // Разрешаем промис, чтобы не блокировать загрузку других
+                };
+                // Убираем crossOrigin для локальных файлов
+                img.src = ASSETS_PATH + fileName + '.png';
+            });
+        }
+
+        async function preloadAssets() {
+            // Собираем все уникальные имена препятствий из всех карьер
+            const obstacleNames = new Set();
+            Object.values(CAREERS).forEach(career => {
+                career.obstacles.forEach(obs => obstacleNames.add(obs));
+            });
+            
+            const namesArray = Array.from(obstacleNames);
+            console.log(`Загрузка ${namesArray.length} изображений препятствий...`);
+            
+            // Загружаем все изображения параллельно
+            const loadPromises = namesArray.map(name => loadImage(name));
+            await Promise.all(loadPromises);
+            
+            const loadedCount = Object.values(loadedImages).filter(img => img !== null).length;
+            console.log(`Загружено: ${loadedCount}/${namesArray.length} изображений`);
+        }
+
+        // ========== GAME STATE ==========
+        let gameState = {
+            screen: 'menu',
+            career: null,
+            score: 0,
+            money: 0,
+            lives: 3,
+            speed: 1.0,
+            combo: 0,
+            maxCombo: 0,
+            timeStart: 0,
+            canvas: null,
+            ctx: null,
+            gameActive: false
+        };
+
+        let player = {
+            x: 50, y: 0, width: 20, height: 20,
+            velocityY: 0, groundY: 0,
+            jumpPower: -12,  // Сила прыжка (более плавная)
+            gravity: 0.5     // Гравитация (более реалистичная)
+        };
+
+        let obstacles = [], bonuses = [];
+        let lastObstacleTime = 0, lastBonusTime = 0;
+        let nextObstacleDelay = 0; // Случайная задержка до следующего препятствия
+
+        // ========== INIT ==========
+        function init() {
+            preloadAssets().catch(err => console.error('Ошибка загрузки ресурсов:', err));
+            buildCareerButtons();
+        }
+
+        function buildCareerButtons() {
+            const grid = document.getElementById('careerGrid');
+            grid.innerHTML = '';
+            for (let [key, career] of Object.entries(CAREERS)) {
+                const btn = document.createElement('button');
+                btn.className = 'career-btn';
+                btn.innerHTML = `<div class="career-emoji">${career.emoji}</div><div class="career-name">${career.name}</div><div class="career-diff">Сложн: ${(career.difficulty * 100).toFixed(0)}%</div>`;
+                btn.onclick = () => showWarning(key);
+                grid.appendChild(btn);
+            }
+        }
+
+        function showWarning(careerKey) {
+            gameState.career = careerKey;
+            const c = CAREERS[careerKey];
+            document.getElementById('warningText').textContent = `"${c.warning}"`;
+            document.getElementById('disclaimerText').textContent = c.disclaimer;
+            switchScreen('warning');
+        }
+
+        function backToMenu() {
+            switchScreen('menu');
+        }
+
+        function switchScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelector(`.${screenName}-screen`).classList.add('active');
+            gameState.screen = screenName;
+        }
+
+        // ========== GAME ==========
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   (window.innerWidth <= 768);
+        }
+
+        function initCanvas() {
+            const container = document.getElementById('gameCanvas');
+            if (!container) return;
+            
+            const isMobileDevice = isMobile();
+            const isLandscape = window.innerWidth > window.innerHeight;
+            
+            // Функция для расчета и установки размеров canvas
+            function calculateCanvasSize() {
+                const containerRect = container.getBoundingClientRect();
+                
+                // Адаптивные размеры для разных устройств
+                let w, h;
+                if (isMobileDevice) {
+                    // Для мобильных: используем весь доступный размер контейнера
+                    w = Math.floor(containerRect.width) || Math.floor(window.innerWidth);
+                    // Используем реальную высоту контейнера (flex: 1 занимает все доступное пространство)
+                    h = Math.floor(containerRect.height) || Math.floor(window.innerHeight * 0.75);
+                    
+                    // Убеждаемся, что используем максимум доступного пространства
+                    if (isLandscape) {
+                        // Альбомная ориентация - минимум 150px
+                        h = Math.max(150, h);
+                    } else {
+                        // Портретная ориентация - минимум 200px
+                        h = Math.max(200, h);
+                    }
+                } else {
+                    // Для десктопов: используем размеры контейнера
+                    w = Math.min(Math.floor(containerRect.width - 30), 800);
+                    h = Math.min(Math.floor(containerRect.height - 30), 400);
+                }
+                
+                // Минимальные размеры для корректной работы
+                w = Math.max(w, 200);
+                h = Math.max(h, 150);
+                
+                return { w, h };
+            }
+            
+            // Получаем размеры
+            const { w, h } = calculateCanvasSize();
+            
+            // Если canvas уже существует, обновляем его размеры
+            if (gameState.canvas) {
+                gameState.canvas.width = w;
+                gameState.canvas.height = h;
+            } else {
+                gameState.canvas = document.createElement('canvas');
+                gameState.canvas.width = w;
+                gameState.canvas.height = h;
+                container.innerHTML = '';
+                container.appendChild(gameState.canvas);
+            }
+            
+            gameState.ctx = gameState.canvas.getContext('2d');
+            
+            // Оптимизация производительности для canvas
+            gameState.ctx.imageSmoothingEnabled = false;
+            if (gameState.ctx.imageSmoothingQuality) {
+                gameState.ctx.imageSmoothingQuality = 'low';
+            }
+            
+            // Устанавливаем размеры canvas для отображения - используем 100% для заполнения контейнера
+            gameState.canvas.style.width = '100%';
+            gameState.canvas.style.height = '100%';
+            
+            player.groundY = h * 0.7;
+            player.y = player.groundY;
+            player.velocityY = 0;
+            player.x = 50;
+            
+            // Обновляем размеры после следующего кадра для точности
+            requestAnimationFrame(() => {
+                const { w: newW, h: newH } = calculateCanvasSize();
+                if (gameState.canvas && (gameState.canvas.width !== newW || gameState.canvas.height !== newH)) {
+                    gameState.canvas.width = newW;
+                    gameState.canvas.height = newH;
+                    player.groundY = newH * 0.7;
+                    player.y = player.groundY;
+                }
+            });
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.money = 0;
+            gameState.lives = 3;
+            gameState.speed = 1.0;
+            gameState.combo = 0;
+            gameState.maxCombo = 0;
+            gameState.gameActive = true;
+            gameState.timeStart = Date.now();
+            
+            obstacles = [];
+            bonuses = [];
+            lastObstacleTime = Date.now();
+            lastBonusTime = Date.now();
+            nextObstacleDelay = 0; // Сброс задержки
+            lastFrameTime = performance.now(); // Инициализация для игрового цикла
+            
+            initCanvas();
+            updateUI();
+            switchScreen('game');
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateUI() {
+            document.getElementById('lives').textContent = gameState.lives;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('money').textContent = gameState.money;
+            
+            const c = CAREERS[gameState.career];
+            const levelIdx = Math.min(Math.floor(gameState.score / 5), c.levels.length - 1);
+            document.getElementById('careerName').textContent = `${c.emoji} ${c.name}`;
+            document.getElementById('levelName').textContent = `${c.levels[levelIdx]} (${levelIdx + 1}/${c.levels.length})`;
+        }
+
+        let lastFrameTime = 0;
+        const targetFPS = 60;
+        const frameInterval = 1000 / targetFPS;
+
+        function gameLoop(currentTime) {
+            if (!gameState.gameActive) return;
+            
+            // Оптимизация FPS для мобильных устройств
+            const elapsed = currentTime - lastFrameTime;
+            if (elapsed >= frameInterval) {
+                update();
+                render();
+                lastFrameTime = currentTime - (elapsed % frameInterval);
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            const c = CAREERS[gameState.career];
+            const canv = gameState.canvas;
+            
+            // PHYSICS
+            player.y += player.velocityY;
+            if (player.y < player.groundY) {
+                player.velocityY += player.gravity; // Используем настраиваемую гравитацию
+            } else {
+                player.y = player.groundY;
+                player.velocityY = 0;
+            }
+            
+            // SPAWN OBSTACLES (с рандомными интервалами)
+            const baseInterval = 1500 / c.difficulty;
+            const randomVariation = baseInterval * 0.6; // ±60% вариация
+            const minInterval = baseInterval * 0.4; // Минимальный интервал
+            const maxInterval = baseInterval * 1.6; // Максимальный интервал
+            
+            if (nextObstacleDelay === 0) {
+                // Генерируем новый случайный интервал
+                nextObstacleDelay = minInterval + Math.random() * (maxInterval - minInterval);
+            }
+            
+            if (Date.now() - lastObstacleTime > nextObstacleDelay) {
+                const type = c.obstacles[Math.floor(Math.random() * c.obstacles.length)];
+                obstacles.push({
+                    x: canv.width,
+                    type: type,
+                    width: 32,
+                    height: 32
+                });
+                lastObstacleTime = Date.now();
+                nextObstacleDelay = 0; // Сброс для следующего случайного интервала
+            }
+            
+            // SPAWN BONUSES
+            if (Date.now() - lastBonusTime > (4000 + Math.random() * 3000)) {
+                // Вычисляем максимальную высоту прыжка
+                // Максимальная высота = (jumpPower²) / (2 * gravity)
+                // Используем Math.abs, так как jumpPower отрицательный
+                const jumpSpeed = Math.abs(player.jumpPower);
+                const maxJumpHeight = (jumpSpeed * jumpSpeed) / (2 * player.gravity);
+                
+                // Монетки размещаем в пределах досягаемости прыжка
+                // В системе координат canvas Y увеличивается вниз, поэтому:
+                // - groundY - это позиция земли (большое значение)
+                // - Монетки должны быть выше, то есть с меньшим Y
+                // Минимальная высота: чуть выше земли (groundY - 30)
+                // Максимальная высота: 85% от максимальной высоты прыжка (чтобы было легче достать)
+                const minHeight = player.groundY - 30; // Чуть выше земли
+                const maxHeight = player.groundY - maxJumpHeight * 0.85; // 85% от максимальной высоты прыжка
+                
+                // Генерируем случайную высоту в этом диапазоне
+                const bonusY = maxHeight + Math.random() * (minHeight - maxHeight);
+                
+                bonuses.push({
+                    x: canv.width,
+                    y: bonusY
+                });
+                lastBonusTime = Date.now();
+            }
+            
+            // UPDATE OBSTACLES
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= gameState.speed * 3;
+                const obsTop = player.groundY - obstacles[i].height;
+                
+                if (player.x + player.width > obstacles[i].x && 
+                    player.x < obstacles[i].x + obstacles[i].width &&
+                    player.y > obsTop - 5 &&
+                    player.y < player.groundY + 5) {
+                    gameState.lives--;
+                    gameState.combo = 0;
+                    if (gameState.lives <= 0) {
+                        endGame();
+                        return;
+                    }
+                    obstacles.splice(i, 1);
+                } else if (obstacles[i].x < -50) {
+                    gameState.score++;
+                    gameState.combo++;
+                    gameState.maxCombo = Math.max(gameState.maxCombo, gameState.combo);
+                    gameState.speed = Math.min(5, 1.0 + gameState.score * 0.05 * c.difficulty);
+                    obstacles.splice(i, 1);
+                }
+            }
+            
+            // UPDATE BONUSES
+            for (let i = bonuses.length - 1; i >= 0; i--) {
+                bonuses[i].x -= gameState.speed * 3;
+                
+                if (player.x + player.width > bonuses[i].x &&
+                    player.x < bonuses[i].x + 15 &&
+                    player.y + player.height > bonuses[i].y - 15 &&
+                    player.y < bonuses[i].y + 15) {
+                    gameState.money += Math.floor(10 * c.moneyMulti);
+                    gameState.combo++;
+                    bonuses.splice(i, 1);
+                } else if (bonuses[i].x < -50) {
+                    bonuses.splice(i, 1);
+                }
+            }
+            
+            updateUI();
+        }
+
+        function render() {
+            const ctx = gameState.ctx;
+            const canv = gameState.canvas;
+            
+            // Белый фон
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canv.width, canv.height);
+            
+            // Линия земли
+            ctx.strokeStyle = '#999999';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, player.groundY);
+            ctx.lineTo(canv.width, player.groundY);
+            ctx.stroke();
+            
+            // DRAW PLAYER
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(player.x + 8, player.y - 18, 4, 4);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(player.x + 9, player.y - 17, 1, 1);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(player.x + 8, player.y - 13, 4, 3);
+            ctx.fillRect(player.x + 7, player.y - 10, 6, 5);
+            ctx.fillRect(player.x + 7, player.y - 5, 2, 1);
+            ctx.fillRect(player.x + 11, player.y - 5, 2, 1);
+            
+            // OBSTACLES
+            obstacles.forEach(obs => {
+                const img = loadedImages[obs.type];
+                if (img && img.complete && img.naturalWidth > 0) {
+                    // Изображение успешно загружено из assets/obstacles
+                    ctx.drawImage(img, obs.x, player.groundY - obs.height, obs.width, obs.height);
+                } else {
+                    // Fallback: рисуем простой прямоугольник, если изображение не загрузилось
+                    ctx.fillStyle = '#FF6B6B';
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 2;
+                    ctx.fillRect(obs.x, player.groundY - obs.height, obs.width, obs.height);
+                    ctx.strokeRect(obs.x, player.groundY - obs.height, obs.width, obs.height);
+                    // Показываем тип препятствия текстом
+                    ctx.fillStyle = '#000000';
+                    ctx.font = 'bold 8px Courier';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(obs.type.substring(0, 3), obs.x + obs.width / 2, player.groundY - obs.height / 2);
+                }
+            });
+            
+            // BONUSES
+            bonuses.forEach(bonus => {
+                ctx.fillStyle = '#FFD700';
+                ctx.strokeStyle = '#FFA500';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(bonus.x + 8, bonus.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#FF8C00';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('$', bonus.x + 8, bonus.y);
+            });
+            
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 10px Courier';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Score: ${gameState.score}`, 10, 20);
+            if (gameState.combo > 1) {
+                ctx.fillStyle = '#00AA00';
+                ctx.fillText(`COMBO x${gameState.combo}`, 10, 35);
+            }
+        }
+
+        function endGame() {
+            gameState.gameActive = false;
+            const elapsed = Math.floor((Date.now() - gameState.timeStart) / 1000);
+            const c = CAREERS[gameState.career];
+            const quote = c.quotes[Math.floor(Math.random() * c.quotes.length)];
+            
+            document.getElementById('gameoverStats').innerHTML = `
+                <div class="stat-line"><span>Карьера:</span><span>${c.emoji} ${c.name}</span></div>
+                <div class="stat-line"><span>Препятствий:</span><span>${gameState.score}</span></div>
+                <div class="stat-line"><span>Макс комбо:</span><span>🔥 ${gameState.maxCombo}</span></div>
+                <div class="stat-line"><span>Время:</span><span>${elapsed}с</span></div>
+                <div class="stat-line"><span>Заработок:</span><span>💰 $${gameState.money}</span></div>
+            `;
+            
+            document.getElementById('gameoverQuote').textContent = `"${quote}"`;
+            switchScreen('gameover');
+        }
+
+        // ========== INPUT ==========
+        let lastJumpTime = 0;
+        const jumpCooldown = 50; // Защита от множественных прыжков (50ms)
+
+        function handleJump() {
+            if (!gameState.gameActive) return false;
+            const now = Date.now();
+            if (now - lastJumpTime < jumpCooldown) return false; // Защита от спама
+            
+            if (player.y >= player.groundY - 1) {
+                player.velocityY = player.jumpPower;
+                lastJumpTime = now;
+                return true;
+            }
+            return false;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === ' ' || e.code === 'Space')) {
+                e.preventDefault(); // Предотвращаем скролл страницы
+                handleJump();
+            }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            if (!gameState.gameActive || !gameState.canvas) return;
+            // Проверяем, что клик был по canvas или игровой области
+            const rect = gameState.canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            if (clickX >= 0 && clickX <= rect.width && clickY >= 0 && clickY <= rect.height) {
+                handleJump();
+            }
+        });
+
+        // Оптимизированная обработка касаний для мобильных
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let isTouchActive = false;
+        
+        document.addEventListener('touchstart', (e) => {
+            if (!gameState.gameActive) return;
+            
+            // Предотвращаем скролл и зум только в игровой области
+            const rect = gameState.canvas ? gameState.canvas.getBoundingClientRect() : null;
+            if (rect) {
+                const touch = e.touches[0];
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
+                
+                // Если касание в области canvas, предотвращаем стандартное поведение
+                if (touchX >= 0 && touchX <= rect.width && touchY >= 0 && touchY <= rect.height) {
+                    e.preventDefault();
+                    touchStartY = touch.clientY;
+                    touchStartTime = Date.now();
+                    isTouchActive = true;
+                    handleJump();
+                }
+            } else {
+                // Если canvas еще не создан, просто предотвращаем стандартное поведение
+                e.preventDefault();
+                handleJump();
+            }
+        }, { passive: false });
+
+        // Предотвращаем зум при двойном касании
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (gameState.gameActive && isTouchActive) {
+                e.preventDefault();
+                isTouchActive = false;
+            }
+            // Предотвращаем двойной тап для зума
+            if (now - lastTouchEnd < 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+        
+        document.addEventListener('touchcancel', (e) => {
+            if (gameState.gameActive) {
+                isTouchActive = false;
+            }
+        }, { passive: false });
+
+        // Предотвращаем контекстное меню на мобильных
+        document.addEventListener('contextmenu', (e) => {
+            if (gameState.gameActive) {
+                e.preventDefault();
+            }
+        });
+
+        // ========== RESIZE HANDLER ==========
+        let resizeTimeout;
+        let lastOrientation = window.orientation !== undefined ? window.orientation : 
+                             (window.innerWidth > window.innerHeight ? 90 : 0);
+        
+        function handleResize() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Определяем изменение ориентации
+                const currentOrientation = window.orientation !== undefined ? window.orientation : 
+                                          (window.innerWidth > window.innerHeight ? 90 : 0);
+                
+                if (gameState.gameActive && gameState.canvas) {
+                    // Переинициализируем canvas при изменении размера или ориентации
+                    initCanvas();
+                }
+                
+                lastOrientation = currentOrientation;
+            }, 250); // Debounce для оптимизации
+        }
+        
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', () => {
+            // Дополнительная задержка для ориентации, так как браузеру нужно время на пересчет
+            setTimeout(handleResize, 500);
+        });
+        
+        // Обработка изменения видимости viewport на мобильных (когда появляется/скрывается адресная строка)
+        let lastViewportHeight = window.innerHeight;
+        function handleViewportChange() {
+            const currentHeight = window.innerHeight;
+            if (Math.abs(currentHeight - lastViewportHeight) > 50) {
+                // Значительное изменение высоты (скорее всего адресная строка)
+                if (gameState.gameActive && gameState.canvas) {
+                    setTimeout(() => {
+                        initCanvas();
+                    }, 100);
+                }
+            }
+            lastViewportHeight = currentHeight;
+        }
+        
+        window.addEventListener('resize', handleViewportChange);
+
+        // ========== START ==========
+        init();
+    </script>
+</body>
+</html>
